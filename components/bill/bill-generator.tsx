@@ -1,9 +1,10 @@
 "use client"
 
-import { Download, Eye, LogOut, Plus, Trash2 } from "lucide-react"
+import { Download, Eye, LogOut, Plus, Trash2, X } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { logoutFromBill } from "@/app/bill/actions"
+import { PdfPreview } from "@/components/bill/pdf-preview"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -50,6 +51,7 @@ export function BillGenerator() {
     entries: [newEntry()],
   })
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -60,12 +62,27 @@ export function BillGenerator() {
     }
   }, [previewUrl])
 
+  // Lock page scroll and close on Escape while the preview is open.
+  useEffect(() => {
+    if (!previewOpen) return
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPreviewOpen(false)
+    }
+    document.documentElement.style.overflow = "hidden"
+    window.addEventListener("keydown", close)
+    return () => {
+      document.documentElement.style.overflow = ""
+      window.removeEventListener("keydown", close)
+    }
+  }, [previewOpen])
+
   const total = billTotal(bill.entries)
 
   /** Any edit makes the current preview outdated. */
   const update = (changes: Partial<BillData>) => {
     setBill((current) => ({ ...current, ...changes }))
     setPreviewUrl(null)
+    setPreviewOpen(false)
     setError(null)
   }
 
@@ -77,6 +94,10 @@ export function BillGenerator() {
     })
 
   const generatePreview = async () => {
+    if (previewUrl) {
+      setPreviewOpen(true)
+      return
+    }
     const problem = validate(bill)
     if (problem) {
       setError(problem)
@@ -91,6 +112,7 @@ export function BillGenerator() {
       ])
       const blob = await pdf(<BillDocument bill={bill} />).toBlob()
       setPreviewUrl(URL.createObjectURL(blob))
+      setPreviewOpen(true)
     } catch {
       setError("Could not generate the PDF. Please try again.")
     } finally {
@@ -302,27 +324,37 @@ export function BillGenerator() {
         </div>
       </section>
 
-      {previewUrl ? (
-        <section className="space-y-3">
-          <h2 className="font-heading text-lg font-semibold">Preview</h2>
-          <iframe
-            src={previewUrl}
-            title="Bill preview"
-            className="h-[80vh] w-full rounded-xl border border-border bg-white"
-          />
-          <p className="text-sm text-muted-foreground">
-            Preview not showing on your phone?{" "}
-            <a
-              href={previewUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="underline"
-            >
-              Open the PDF
-            </a>
-            .
-          </p>
-        </section>
+      {previewUrl && previewOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Bill preview"
+          className="fixed inset-0 z-[60] flex flex-col bg-background/95 backdrop-blur"
+        >
+          <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-6">
+            <h2 className="font-heading text-lg font-semibold">Bill preview</h2>
+            <div className="flex gap-2">
+              <Button asChild size="lg">
+                <a href={previewUrl} download={fileName}>
+                  <Download /> Download PDF
+                </a>
+              </Button>
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                onClick={() => setPreviewOpen(false)}
+              >
+                <X /> <span className="sr-only sm:not-sr-only">Close</span>
+              </Button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-6">
+            <div className="mx-auto max-w-3xl">
+              <PdfPreview url={previewUrl} />
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   )
