@@ -39,11 +39,11 @@ export const siteConfig = {
   emailHref: "mailto:info@adviktransport.in",
 
   address: {
-    line1: "Gala No. 14, Transport Nagar",
-    line2: "Andheri East, Mumbai",
-    city: "Mumbai",
+    line1: "MKT B-Wing, APMC Masala Market",
+    line2: "Sector-19, Vashi",
+    city: "Navi Mumbai",
     state: "Maharashtra",
-    postalCode: "400093",
+    postalCode: "400703",
     country: "India",
   },
 

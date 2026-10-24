@@ -18,6 +18,7 @@ const navLinks = [
   { title: "Services", href: "/#services" },
   { title: "Process", href: "/#process" },
   { title: "Contact", href: "/#contact" },
+  { title: "Bill", href: "/bill" },
 ]
 
 /**
@@ -44,7 +45,8 @@ export function SiteHeader() {
     }
   }, [open])
 
-  const marker = hovered ?? (activeSection ? `/#${activeSection}` : null)
+  const currentPage = navLinks.some((link) => link.href === pathname) ? pathname : null
+  const marker = hovered ?? (activeSection ? `/#${activeSection}` : currentPage)
 
   return (
     <header className="fixed inset-x-0 top-0 z-50">
@@ -69,7 +71,11 @@ export function SiteHeader() {
                   href={link.href}
                   onMouseEnter={() => setHovered(link.href)}
                   aria-current={
-                    activeSection && link.href === `/#${activeSection}` ? "true" : undefined
+                    link.href === pathname
+                      ? "page"
+                      : activeSection && link.href === `/#${activeSection}`
+                        ? "true"
+                        : undefined
                   }
                   className={cn(
                     "relative isolate block rounded-full px-4 py-2 text-xs tracking-widest uppercase transition-colors",
